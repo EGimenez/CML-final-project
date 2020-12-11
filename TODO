@@ -1,0 +1,6 @@
+
+
+Model4Death
+Model4CheckOutTime | Admission Type Elective = 1
+Model4CheckOutTime | Admission Type Elective = 0
+Model4Lenght | CheckOutTime < 1.5

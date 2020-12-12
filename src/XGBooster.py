@@ -14,14 +14,13 @@ def get_xgbooster(X, Y, name, params, calculate):
 			xgb = xgboost.XGBClassifier(learning_rate=0.02, param_max_depth=5, n_estimators=400, scoring='roc_auc', objective='binary:logistic',
 		                    silent=True, nthread=1)
 			t0 = time.time()
-			sh = GridSuccessiveHalving(xgb, params, cv=5, ratio=2, force_exhaust_budget=True, scoring='roc_auc',
-			                           verbose=3, n_jobs=6).fit(X, Y)
+			sh = GridSuccessiveHalving(xgb, params, cv=5, ratio=2, force_exhaust_budget=True, scoring='roc_auc', verbose=3, n_jobs=6).fit(X, Y)
 			t1 = time.time()
 		else:
 			xgb = xgboost.XGBRegressor(learning_rate=0.02, param_max_depth=5, n_estimators=400, objective ='reg:linear',
 		                    silent=True, nthread=1)
 			t0 = time.time()
-			sh = GridSuccessiveHalving(xgb, params, cv=5, ratio=2, force_exhaust_budget=True, verbose=3, n_jobs=6).fit(X, Y)
+			sh = GridSuccessiveHalving(xgb, params, cv=5, ratio=2, force_exhaust_budget=True, scoring='neg_mean_squared_error',  verbose=3, n_jobs=6).fit(X, Y)
 			t1 = time.time()
 
 		# Halving

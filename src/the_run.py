@@ -8,14 +8,16 @@ from dabl.search import GridSuccessiveHalving
 import time
 import pickle
 from src.XGBooster import get_xgbooster
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
 
 # Params
 CALIBRATE_DEATH = False
-SHORT_LONG = False
-ShortModel_0_Admission_Elective_0 = False
-ShortModel_0_Admission_Elective_1 = False
-ShortModel_1_Admission_Elective_0 = False
-ShortModel_1_Admission_Elective_1 = False
+SHORT_LONG = True
+ShortModel_0_Admission_Elective_0 = True
+ShortModel_0_Admission_Elective_1 = True
+ShortModel_1_Admission_Elective_0 = True
+ShortModel_1_Admission_Elective_1 = True
 
 # Training dataset
 data = pd.read_csv('../data/mimic_train.csv')
@@ -38,6 +40,15 @@ data_join_2 = dummify(data_join, cathegorical_vars)
 data_2 = data_join_2[:len(data)]
 kaggle_2 = data_join_2[len(data):]
 
+# BEGIN
+data_2 = data_join_2[:len(data)]
+index_0 = data_2.index
+
+data_2 = data_2.sample(frac=0.8, axis=0)
+index_s = data_2.index
+index_r = set(index_0) - set(index_s)
+kaggle_2 = data_join_2[:len(data)].loc[index_r, :]
+# END
 
 # Forward_columns
 columns_drop = ['hadm_id', 'icustay_id', 'subject_id',
@@ -54,6 +65,10 @@ estimated_columns = ['SHORT_LONG_MODEL', 'HOSPITAL_EXPIRE_FLAG']
 data_X = drop(data_2, columns_drop + estimated_columns, is_reg=True)
 data_Y = data_2['HOSPITAL_EXPIRE_FLAG']
 params = {'max_depth': [5, 6], 'n_estimators': range(400, 700, 50)}
+params = {'min_child_weight': [1, 5, 10],
+          'gamma': [0.5, 1, 1.5, 2, 5],
+          'max_depth': [5, 6, 7],
+          'n_estimators': range(300, 750, 50)}
 sh_d = get_xgbooster(data_X, data_Y, 'death', params, CALIBRATE_DEATH)
 kaggle_2['HOSPITAL_EXPIRE_FLAG'] = sh_d.predict(drop(kaggle_2, columns_drop + estimated_columns, is_reg=True))
 
@@ -61,6 +76,9 @@ kaggle_2['HOSPITAL_EXPIRE_FLAG'] = sh_d.predict(drop(kaggle_2, columns_drop + es
 data_X = drop(data_2, columns_drop + ['SHORT_LONG_MODEL'], is_reg=True)
 data_Y = data_2['SHORT_LONG_MODEL']
 params = {'max_depth': [5, 6], 'n_estimators': range(400, 700, 50)}
+params = {'gamma': [0.5, 1, 1.5, 2, 5],
+          'max_depth': [5, 6, 7],
+          'n_estimators': range(300, 700, 50)}
 sh_s = get_xgbooster(data_X, data_Y, 'short_long', params, SHORT_LONG)
 kaggle_2['SHORT_LONG_MODEL'] = sh_s.predict(drop(kaggle_2, columns_drop + ['SHORT_LONG_MODEL'], is_reg=True))
 
@@ -76,22 +94,42 @@ X_test  = drop(kaggle_2, columns_drop, is_reg=True)
 
 # ShortModel_0_Admission_Elective_0
 params = {'max_depth': [5, 6], 'n_estimators': range(400, 700, 50)}
+params = {'min_child_weight': [1, 5, 10],
+          'gamma': [0.5, 1, 1.5, 2, 5],
+          'max_depth': [5, 6, 7],
+          'n_estimators': range(300, 750, 50)}
 index = X_train[(X_train['SHORT_LONG_MODEL'] == 0) & (X_train['ADMISSION_TYPE_ELECTIVE'] == 0)].index
+index = X_train[(X_train['ADMISSION_TYPE_ELECTIVE'] == 0)].index
 sh_00 = get_xgbooster(X_train.loc[index, :], Y_train_LOS[index], 'ShortModel_0_Admission_Elective_0', params, ShortModel_0_Admission_Elective_0)
 
 # ShortModel_0_Admission_Elective_1
 params = {'max_depth': [5, 6], 'n_estimators': range(400, 700, 50)}
+params = {'min_child_weight': [1, 5, 10],
+          'gamma': [0.5, 1, 1.5, 2, 5],
+          'max_depth': [5, 6, 7],
+          'n_estimators': range(300, 750, 50)}
 index = X_train[(X_train['SHORT_LONG_MODEL'] == 0) & (X_train['ADMISSION_TYPE_ELECTIVE'] == 1)].index
+index = X_train[(X_train['ADMISSION_TYPE_ELECTIVE'] == 1)].index
 sh_01 = get_xgbooster(X_train.loc[index, :], Y_train_LOS[index], 'ShortModel_0_Admission_Elective_1', params, ShortModel_0_Admission_Elective_1)
 
 # ShortModel_1_Admission_Elective_0
 params = {'max_depth': [5, 6], 'n_estimators': range(400, 700, 50)}
+params = {'min_child_weight': [1, 5, 10],
+          'gamma': [0.5, 1, 1.5, 2, 5],
+          'max_depth': [5, 6, 7],
+          'n_estimators': range(300, 750, 50)}
 index = X_train[(X_train['SHORT_LONG_MODEL'] == 1) & (X_train['ADMISSION_TYPE_ELECTIVE'] == 0)].index
+index = X_train[(X_train['ADMISSION_TYPE_ELECTIVE'] == 0)].index
 sh_10 = get_xgbooster(X_train.loc[index, :], Y_train_MY_LOS[index], 'ShortModel_1_Admission_Elective_0', params, ShortModel_1_Admission_Elective_0)
 
 # ShortModel_1_Admission_Elective_1
 params = {'max_depth': [5, 6], 'n_estimators': range(400, 700, 50)}
+params = {'min_child_weight': [1, 5, 10],
+          'gamma': [0.5, 1, 1.5, 2, 5],
+          'max_depth': [5, 6, 7],
+          'n_estimators': range(300, 750, 50)}
 index = X_train[(X_train['SHORT_LONG_MODEL'] == 1) & (X_train['ADMISSION_TYPE_ELECTIVE'] == 1)].index
+index = X_train[(X_train['ADMISSION_TYPE_ELECTIVE'] == 1)].index
 sh_11 = get_xgbooster(X_train.loc[index, :], Y_train_MY_LOS[index], 'ShortModel_1_Admission_Elective_1', params, ShortModel_1_Admission_Elective_1)
 
 result['LOS'] = 0
@@ -129,4 +167,11 @@ result.loc[index, ['LOS']] = prob[:, 0]*(sh_01.predict(X_test.loc[index, :]) - k
                              prob[:, 1]*sh_11.predict(X_test.loc[index, :])
 
 result.to_csv('result_3.csv', index=False)
+
+res = mean_squared_error(data_join_2[:len(data)].loc[index_r, ['LOS']]['LOS'], result['LOS'])
+
+plt.plot(data_join_2[:len(data)].loc[index_r, ['LOS']]['LOS'], result['LOS'], 'o',  markersize=0.5)
+plt.show()
+print(res**0.5)
 print('Hola')
+
